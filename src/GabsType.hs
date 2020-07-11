@@ -3,6 +3,7 @@ module GabsType where
 import GabsAst
 
 type Context = [(Name, Type)]
+emptyContext = []
 
 typeExp :: Context -> Exp -> Maybe Type
 typeExp cont exp = case exp of

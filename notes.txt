@@ -3,4 +3,8 @@ Starting small, developing incrementally.
 2. System F.
 3. Global declarations? (Needed for ADT definitions?)
 4. ADTs + pattern matching.
-5. Remove base types.
+5. Remove base types
+6. Refinement types?
+7. Bitfield types?
+
+Keep pure stuff as its own language, add in build stuff
