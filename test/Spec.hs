@@ -16,8 +16,8 @@ bArith_bad = "or and"
 iteTest = "if " ++ bArith ++ " then " ++ iArith ++ "else -2"
 iteTest_value = iArith_value
 
--- Needs var
--- lambdaTest
+functions = "(λx: Bool. 2) True * 3" -- +/-3 doesn't work!
+functionw_value = 6
 
 main :: IO ()
 main = putStrLn "Todo"

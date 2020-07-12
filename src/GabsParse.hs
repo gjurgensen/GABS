@@ -21,8 +21,8 @@ languageDef = emptyDef {
   Token.commentStart  = "{-",
   Token.commentEnd    = "-}",
   Token.commentLine   = "--",
-  Token.identStart    = letter   <|> satisfy (== '_'),
-  Token.identLetter   = alphaNum <|> satisfy (== '_'),
+  Token.identStart    = letter   <|> char '_',
+  Token.identLetter   = alphaNum <|> char '_',
   Token.reservedNames = ["if", "then", "else", "λ", "+", "-", "~", "*", "/",
                          "and", "or", "not", "Bool", "Int", "->", "lambda"]
 }
@@ -34,19 +34,21 @@ reservedOp = Token.reservedOp lexer
 colon      = Token.colon      lexer
 dot        = Token.dot        lexer
 integer    = Token.integer    lexer
+natural    = Token.natural    lexer
 identifier = Token.identifier lexer
 whiteSpace = Token.whiteSpace lexer
 symbol     = Token.symbol     lexer
 
-expr = tryApp (buildExpressionParser opTable subexpr
+expr = (buildExpressionParser opTable subexpr
               <?> "expression")
   where
-    subexpr = parens expr
+    subexpr = tryApp (
+              parens expr
               <|> ite <|> true <|> false <|> int <|> lambda <|> var
-              <?> "expression"
+              <?> "expression")
     tryApp p = do
       e <- p
-      try (App e <$> expr) <|> pure e
+      try (App e <$> subexpr) <|> pure e
 
 opTable = [[notOp],
            [andOp],
@@ -65,7 +67,11 @@ opTable = [[notOp],
 true  = reserved "True"  >> pure (B True)
 false = reserved "False" >> pure (B False)
 
-int = I <$> integer
+-- int = I <$> integer
+int = do
+  isNeg <- fmap isJust $ optionMaybe $ symbol "~"
+  num   <- natural
+  pure $ I $ if isNeg then negate num else num
 
 name = identifier
 
