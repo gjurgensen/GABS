@@ -38,14 +38,15 @@ identifier = Token.identifier lexer
 whiteSpace = Token.whiteSpace lexer
 symbol     = Token.symbol     lexer
 
-expr = buildExpressionParser opTable subexpr
-       <?> "expression"
+expr = tryApp (buildExpressionParser opTable subexpr
+              <?> "expression")
   where
-      subexpr = parens expr
-                <|> ite <|> true <|> false <|> int
-                -- <|> app
-                <|> lambda <|> var
-                <?> "expression"
+    subexpr = parens expr
+              <|> ite <|> true <|> false <|> int <|> lambda <|> var
+              <?> "expression"
+    tryApp p = do
+      e <- p
+      try (App e <$> expr) <|> pure e
 
 opTable = [[notOp],
            [andOp],
@@ -60,7 +61,6 @@ opTable = [[notOp],
     timesOp = Infix  ( reservedOp "*"   >> pure Times ) AssocLeft
     divOp   = Infix  ( reservedOp "/"   >> pure Div   ) AssocLeft
     notOp   = Prefix $ reservedOp "not" >> pure Not
-    -- app     = Prefix $ expr >>= pure . App
 
 true  = reserved "True"  >> pure (B True)
 false = reserved "False" >> pure (B False)
@@ -88,13 +88,6 @@ ite = do
   reserved "else"
   expE <- expr
   pure $ Ite cond expT expE
-
-app = do
-  lamb <- expr
-  -- many1 space
-  whiteSpace
-  arg  <- expr
-  pure $ App lamb arg
 
 
 typ = buildExpressionParser tOpTable subTypExpr <?> "type"
