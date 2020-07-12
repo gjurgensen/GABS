@@ -2,17 +2,20 @@ module GabsType where
 
 import GabsAst
 
-type Context = [(Name, Type)]
-emptyContext = []
+import qualified Data.Map.Strict as Map
+
+type Context = Map.Map Name Type
+emptyContext = Map.empty :: Context
 
 typeExp :: Context -> Exp -> Maybe Type
 typeExp cont exp = case exp of
   B _ -> pure TBool
   I _ -> pure TInt
   Lambda n t body -> do
-    tBody <- typeExp ((n, t) : cont) body
+    let extConv = Map.insert n t cont
+    tBody <- typeExp extConv body
     pure $ TArr t tBody
-  Var n -> lookup n cont
+  Var n -> Map.lookup n cont
   And e1 e2 -> do
     TBool <- typeExp cont e1
     TBool <- typeExp cont e2
@@ -49,5 +52,3 @@ typeExp cont exp = case exp of
     TArr t1 t2 <- typeExp cont e1
     t3 <- typeExp cont e2
     if t1 == t3 then pure t2 else fail ""
-
-

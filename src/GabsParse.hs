@@ -39,16 +39,15 @@ identifier = Token.identifier lexer
 whiteSpace = Token.whiteSpace lexer
 symbol     = Token.symbol     lexer
 
-expr = (buildExpressionParser opTable subexpr
+
+expr = chainl1 exprNonApp $ pure App
+
+exprNonApp = (buildExpressionParser opTable subexpr
               <?> "expression")
   where
-    subexpr = tryApp (
-              parens expr
+    subexpr = parens expr
               <|> ite <|> true <|> false <|> int <|> lambda <|> var
-              <?> "expression")
-    tryApp p = do
-      e <- p
-      try (App e <$> subexpr) <|> pure e
+              <?> "expression"
 
 opTable = [[notOp],
            [andOp],
@@ -56,13 +55,13 @@ opTable = [[notOp],
            [timesOp, divOp],
            [plusOp, minusOp]]
   where
+    notOp   = Prefix $ reservedOp "not" >> pure Not
     andOp   = Infix  ( reservedOp "and" >> pure And   ) AssocLeft
     orOp    = Infix  ( reservedOp "or"  >> pure Or    ) AssocLeft
     plusOp  = Infix  ( reservedOp "+"   >> pure Plus  ) AssocLeft
     minusOp = Infix  ( reservedOp "-"   >> pure Minus ) AssocLeft
     timesOp = Infix  ( reservedOp "*"   >> pure Times ) AssocLeft
     divOp   = Infix  ( reservedOp "/"   >> pure Div   ) AssocLeft
-    notOp   = Prefix $ reservedOp "not" >> pure Not
 
 true  = reserved "True"  >> pure (B True)
 false = reserved "False" >> pure (B False)
@@ -113,7 +112,7 @@ gabs = do
   whiteSpace >> eof
   pure expr
 
-interpWithName :: String -> String -> Either String Exp
+interpWithName :: String -> String -> Either String (Env, Exp)
 interpWithName fileName src = do
   expr <- mapLeft show $ parse gabs fileName src
   maybeToEither "Type error" $ typeExp emptyContext expr
@@ -124,20 +123,20 @@ interpWithName fileName src = do
     maybeToEither x Nothing  = Left x
     maybeToEither _ (Just x) = Right x
 
-interpFile :: String -> IO (Either String Exp)
+interpFile :: String -> IO (Either String (Env, Exp))
 interpFile file = do
-    src <- readFile file
-    pure $ interpWithName file src
+  src <- readFile file
+  pure $ interpWithName file src
 
 interpFileTest file = do
-    eithExp <- interpFile file
-    putStrLn $ case eithExp of
-      Left  err -> "Error: " ++ err
-      Right exp -> show exp
+  eithExp <- interpFile file
+  case eithExp of
+    Left  err -> putStrLn $ "Error: " ++ err
+    Right res -> printResult res
 
-interp :: String -> Either String Exp
+interp :: String -> Either String (Env, Exp)
 interp = interpWithName ""
 
-interpTest str = putStrLn $ case interp str of
-  Left  err -> "Error: " ++ err
-  Right exp -> show exp
+interpTest str = case interp str of
+  Left  err -> putStrLn $ "Error: " ++ err
+  Right res -> printResult res

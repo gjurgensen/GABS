@@ -23,7 +23,7 @@ instance Show Exp where
   show exp = case exp of
     B b -> show b
     I i -> show i
-    Lambda n t e -> "λ " ++ n ++ ": " ++ show t ++ ". " ++ show e
+    Lambda n t e -> "λ" ++ n ++ ": " ++ show t ++ ". " ++ show e
     Var n -> n
     And e1 e2 -> parens $ show e1 ++ " and " ++ show e2
     Or e1 e2 -> parens $ show e1 ++ " or " ++ show e2
@@ -33,7 +33,7 @@ instance Show Exp where
     Times e1 e2 -> parens $ show e1 ++ " * " ++ show e2
     Div e1 e2 -> parens $ show e1 ++ " / " ++ show e2
     Ite e1 e2 e3 -> "if " ++ show e1 ++ " then " ++ show e2 ++ " else " ++ show e3
-    App e1 e2 -> parens (show e1) ++ " " ++ show e2
+    App e1 e2 -> parens (show e1) ++ " " ++ parens (show e2)
     where
       parens s = "(" ++ s ++  ")"
 
