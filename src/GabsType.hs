@@ -7,11 +7,11 @@ import qualified Data.Map.Strict as Map
 type Context = Map.Map Name Type
 emptyContext = Map.empty :: Context
 
-typeExp :: Context -> Exp -> Maybe Type
+typeExp :: Context -> Expr -> Maybe Type
 typeExp cont exp = case exp of
-  B _ -> pure TBool
-  I _ -> pure TInt
-  Lambda n t body -> do
+  Norm (B _) -> pure TBool
+  Norm (I _) -> pure TInt
+  Norm (Lambda _ n t body) -> do
     let extConv = Map.insert n t cont
     tBody <- typeExp extConv body
     pure $ TArr t tBody
