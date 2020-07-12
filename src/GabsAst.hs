@@ -27,7 +27,7 @@ instance Show Exp where
     Var n -> n
     And e1 e2 -> parens $ show e1 ++ " and " ++ show e2
     Or e1 e2 -> parens $ show e1 ++ " or " ++ show e2
-    Not e -> parens $ show e
+    Not e -> "not " ++ parens (show e)
     Plus e1 e2 -> parens $ show e1 ++ " + " ++ show e2
     Minus e1 e2 -> parens $ show e1 ++ " - " ++ show e2
     Times e1 e2 -> parens $ show e1 ++ " * " ++ show e2

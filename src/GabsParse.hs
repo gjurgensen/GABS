@@ -1,3 +1,5 @@
+-- Adapted from the following tutorial: https://wiki.haskell.org/Parsing_a_simple_imperative_language
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module GabsParse where
@@ -11,169 +13,131 @@ import Data.Maybe
 import Control.Monad
 
 import Text.Parsec
+import Text.Parsec.Expr
+import Text.Parsec.Language
+import qualified Text.Parsec.Token as Token
 
-parens :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
-parens p = do
-  char '(' >> spaces
-  ret <- p
-  spaces >> char ')'
-  pure ret
+languageDef = emptyDef {
+  Token.commentStart  = "{-",
+  Token.commentEnd    = "-}",
+  Token.commentLine   = "--",
+  Token.identStart    = letter   <|> satisfy (== '_'),
+  Token.identLetter   = alphaNum <|> satisfy (== '_'),
+  Token.reservedNames = ["if", "then", "else", "λ", "+", "-", "~", "*", "/",
+                         "and", "or", "not", "Bool", "Int", "->", "lambda"]
+}
+lexer      = Token.makeTokenParser languageDef
+lexeme     = Token.lexeme     lexer
+parens     = Token.parens     lexer
+reserved   = Token.reserved   lexer
+reservedOp = Token.reservedOp lexer
+colon      = Token.colon      lexer
+dot        = Token.dot        lexer
+integer    = Token.integer    lexer
+identifier = Token.identifier lexer
+whiteSpace = Token.whiteSpace lexer
+symbol     = Token.symbol     lexer
 
-spaceSep :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
-spaceSep p = do
-  many1 space
-  ret <- p
-  many1 space
-  pure ret
-
-optSpaceSep :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
-optSpaceSep p = do
-  spaces
-  ret <- p
-  spaces
-  pure ret
-
-true :: Stream s m Char => ParsecT s u m Exp
-true = string "True" >> pure (B True)
-
-false :: Stream s m Char => ParsecT s u m Exp
-false = string "False" >> pure (B False)
-
-int :: Stream s m Char => ParsecT s u m Exp
-int = do
-  isNeg  <- fmap isJust $ optionMaybe $ char '~'
-  digits <- many1 digit
-  let num = read digits
-  pure $ I $ if isNeg then negate num else num
-
-name :: Stream s m Char => ParsecT s u m Name
-name = do
-  h <- satisfy isLetter
-  t <- many $ satisfy permittedChar
-  let name = h:t
-  when (name `elem` forbiddenWords) $ fail $ name ++ " is a keyword" --fail isn't right thing to do
-  pure name
+expr = buildExpressionParser opTable subexpr
+       <?> "expression"
   where
-    permittedChar c = isLetter c || isDigit c || c == '_'
-    forbiddenWords  = ["True", "False"]
+      subexpr = parens expr
+                <|> ite <|> true <|> false <|> int
+                -- <|> app
+                <|> lambda <|> var
+                <?> "expression"
 
-lambda :: Stream s m Char => ParsecT s u m Exp
+opTable = [[notOp],
+           [andOp],
+           [orOp],
+           [timesOp, divOp],
+           [plusOp, minusOp]]
+  where
+    andOp   = Infix  ( reservedOp "and" >> pure And   ) AssocLeft
+    orOp    = Infix  ( reservedOp "or"  >> pure Or    ) AssocLeft
+    plusOp  = Infix  ( reservedOp "+"   >> pure Plus  ) AssocLeft
+    minusOp = Infix  ( reservedOp "-"   >> pure Minus ) AssocLeft
+    timesOp = Infix  ( reservedOp "*"   >> pure Times ) AssocLeft
+    divOp   = Infix  ( reservedOp "/"   >> pure Div   ) AssocLeft
+    notOp   = Prefix $ reservedOp "not" >> pure Not
+    -- app     = Prefix $ expr >>= pure . App
+
+true  = reserved "True"  >> pure (B True)
+false = reserved "False" >> pure (B False)
+
+int = I <$> integer
+
+name = identifier
+
 lambda = do
-  char 'λ' >> spaces
+  void (symbol "λ") <|> reserved "lambda"
   name <- name
-  optSpaceSep $ char ':'
+  colon
   typ  <- typ
-  optSpaceSep $ char '.'
-  exp  <- expression
-  pure $ Lambda name typ exp
+  dot
+  expr <- expr
+  pure $ Lambda name typ expr
 
-var :: Stream s m Char => ParsecT s u m Exp
 var = Var <$> name
 
--- Needs lookahead
---infixOp :: Stream s m Char => ParsecT s u m 
-
-andOp :: Stream s m Char => ParsecT s u m Exp
-andOp = do
-  expL <- expression
-  optSpaceSep $ string "&&"
-  expR <- expression
-  pure $ And expL expR
-
-orOp :: Stream s m Char => ParsecT s u m Exp
-orOp = do
-  expL <- expression
-  optSpaceSep $ string "||"
-  expR <- expression
-  pure $ Or expL expR
-
-notOp :: Stream s m Char => ParsecT s u m Exp
-notOp = do
-  string "!" >> spaces
-  exp <- expression
-  pure $ Not exp
-
-plusOp :: Stream s m Char => ParsecT s u m Exp
-plusOp = do
-  expL <- expression
-  optSpaceSep $ string "+"
-  expR <- expression
-  pure $ Plus expL expR
-
-minusOp :: Stream s m Char => ParsecT s u m Exp
-minusOp = do
-  expL <- expression
-  optSpaceSep $ string "-"
-  expR <- expression
-  pure $ Minus expL expR
-
-timesOp :: Stream s m Char => ParsecT s u m Exp
-timesOp = do
-  expL <- expression
-  optSpaceSep $ string "*"
-  expR <- expression
-  pure $ Times expL expR
-
-divOp :: Stream s m Char => ParsecT s u m Exp
-divOp = do
-  expL <- expression
-  optSpaceSep $ string "/"
-  expR <- expression
-  pure $ Div expL expR
-
-ite :: Stream s m Char => ParsecT s u m Exp
 ite = do
-  string "if" >> spaces
-  cond <- expression
-  spaceSep $ string "then"
-  expT <- expression
-  spaceSep $ string "else"
-  expE <- expression
+  reserved "if"
+  cond <- expr
+  reserved "then"
+  expT <- expr
+  reserved "else"
+  expE <- expr
   pure $ Ite cond expT expE
 
-app :: Stream s m Char => ParsecT s u m Exp
 app = do
-  lam <- expression
-  many1 space
-  exp <- expression
-  pure $ App lam exp
+  lamb <- expr
+  -- many1 space
+  whiteSpace
+  arg  <- expr
+  pure $ App lamb arg
 
-expression :: Stream s m Char => ParsecT s u m Exp
-expression = spaces >> choice [
-  parens expression, ite, notOp, lambda, --these are all safe options to try
-  -- the binops need some sort of look ahead?
-  true, false, int, var] -- these need to be last resort
 
-tbool :: Stream s m Char => ParsecT s u m Type
-tbool = string "Bool" >> pure TBool
+typ = buildExpressionParser tOpTable subTypExpr <?> "type"
+  where
+    subTypExpr = parens typ <|> tBool <|> tInt <?> "type"
 
-tint :: Stream s m Char => ParsecT s u m Type
-tint = string "Int" >> pure TInt
+tOpTable = [[arr]]
+  where
+    arr = Infix (reservedOp "->" >> pure TArr) AssocRight
 
-tarr :: Stream s m Char => ParsecT s u m Type
-tarr = do
-  typeL <- typ
-  spaces >> string "->" >> spaces
-  typeR <- typ
-  pure $ TArr typeL typeR
+tBool = reserved "Bool" >> pure TBool
+tInt  = reserved "Int"  >> pure TInt
 
--- Broken
-typ :: Stream s m Char => ParsecT s u m Type
-typ = choice [
-  parens typ,
-  -- TArr -- needs lookahead
-  tbool, tint]
+gabs = do
+  whiteSpace
+  expr <- expr
+  whiteSpace >> eof
+  pure expr
 
-interp :: String -> Either String Exp
-interp str = do 
-  exp <- mapLeft show $ parse expression "" str
-  maybeToEither "Type error" $ typeExp emptyContext exp
-  maybeToEither "Runtime error (shouldn't happen!)" $ eval emptyEnv exp
+interpWithName :: String -> String -> Either String Exp
+interpWithName fileName src = do
+  expr <- mapLeft show $ parse gabs fileName src
+  maybeToEither "Type error" $ typeExp emptyContext expr
+  maybeToEither "Runtime error (shouldn't happen!)" $ eval emptyEnv expr
   where
     mapLeft _ (Right x) = Right x
     mapLeft f (Left  x) = Left $ f x
     maybeToEither x Nothing  = Left x
     maybeToEither _ (Just x) = Right x
+
+interpFile :: String -> IO (Either String Exp)
+interpFile file = do
+    src <- readFile file
+    pure $ interpWithName file src
+
+interpFileTest file = do
+    eithExp <- interpFile file
+    putStrLn $ case eithExp of
+      Left  err -> "Error: " ++ err
+      Right exp -> show exp
+
+interp :: String -> Either String Exp
+interp = interpWithName ""
 
 interpTest str = putStrLn $ case interp str of
   Left  err -> "Error: " ++ err
