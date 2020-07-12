@@ -47,6 +47,7 @@ eval env expr = case expr of
     let extEnv = Map.insert n e2' envLam
     eval extEnv body
 
+-- Prints a lambda's environment. 
 printResult :: NormalExpr -> IO ()
 printResult nExpr = do
   putStrLn $ show nExpr
