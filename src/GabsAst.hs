@@ -4,7 +4,7 @@ import qualified Data.Map.Strict as Map
 
 type Name = String
 
-type Env = Map.Map Name NormalExpr
+type Env = Map.Map Name Expr
 emptyEnv = Map.empty :: Env
 
 data NormalExpr =
@@ -22,7 +22,13 @@ instance Show NormalExpr where
 data Expr =
     Norm NormalExpr
   | Var Name
+  | Fix Expr
   | Ite Expr Expr Expr
+  | Eq Expr Expr
+  | Lt Expr Expr
+  | Gt Expr Expr
+  | Lte Expr Expr
+  | Gte Expr Expr
   | App Expr Expr
   | And Expr Expr
   | Or Expr Expr
@@ -37,6 +43,12 @@ instance Show Expr where
   show expr = case expr of
     Norm n -> show n
     Var n -> n
+    Fix e -> "fix " ++ parens (show e)
+    Eq e1 e2 -> parens $ show e1 ++ " = " ++ show e2
+    Lt e1 e2 -> parens $ show e1 ++ " < " ++ show e2
+    Gt e1 e2 -> parens $ show e1 ++ " > " ++ show e2
+    Lte e1 e2 -> parens $ show e1 ++ " <= " ++ show e2
+    Gte e1 e2 -> parens $ show e1 ++ " >= " ++ show e2
     And e1 e2 -> parens $ show e1 ++ " and " ++ show e2
     Or e1 e2 -> parens $ show e1 ++ " or " ++ show e2
     Not e -> "not " ++ parens (show e)

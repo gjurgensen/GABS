@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: df556da5595fb6be1e5d8f50562998cb29c97e6f9a7297f091282adc3decf2a2
+-- hash: c8ec97e517eaf222bcf3ee0e6076e0cde4bea6f9f42348dd94f1c14048419c5d
 
 name:           gabs
 version:        0.1.0.0
@@ -38,6 +38,8 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , extra
+    , haskeline
     , parsec
   default-language: Haskell2010
 
@@ -51,7 +53,9 @@ executable gabs-exe
   build-depends:
       base >=4.7 && <5
     , containers
+    , extra
     , gabs
+    , haskeline
     , parsec
   default-language: Haskell2010
 
@@ -66,6 +70,8 @@ test-suite gabs-test
   build-depends:
       base >=4.7 && <5
     , containers
+    , extra
     , gabs
+    , haskeline
     , parsec
   default-language: Haskell2010

@@ -16,6 +16,29 @@ typeExp cont exp = case exp of
     tBody <- typeExp extConv body
     pure $ TArr t tBody
   Var n -> Map.lookup n cont
+  Fix e -> do
+    TArr t1 t2 <- typeExp cont e
+    if t1 == t2 then pure t1 else fail ""
+  Eq e1 e2 -> do
+    t1 <- typeExp cont e1
+    t2 <- typeExp cont e1
+    if t1 == t2 then pure TBool else fail ""
+  Lt e1 e2 -> do
+    TInt <- typeExp cont e1
+    TInt <- typeExp cont e1
+    pure TBool
+  Gt e1 e2 -> do
+    TInt <- typeExp cont e1
+    TInt <- typeExp cont e1
+    pure TBool
+  Lte e1 e2 -> do
+    TInt <- typeExp cont e1
+    TInt <- typeExp cont e1
+    pure TBool
+  Gte e1 e2 -> do
+    TInt <- typeExp cont e1
+    TInt <- typeExp cont e1
+    pure TBool
   And e1 e2 -> do
     TBool <- typeExp cont e1
     TBool <- typeExp cont e2

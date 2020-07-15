@@ -24,7 +24,8 @@ languageDef = emptyDef {
   Token.identStart    = letter   <|> char '_',
   Token.identLetter   = alphaNum <|> char '_',
   Token.reservedNames = ["if", "then", "else", "λ", "+", "-", "~", "*", "/",
-                         "and", "or", "not", "Bool", "Int", "->", "lambda"]
+                         "and", "or", "not", "Bool", "Int", "->", "lambda",
+                         "fix", "let", "in", "letrec"]
 }
 lexer      = Token.makeTokenParser languageDef
 lexeme     = Token.lexeme     lexer
@@ -40,28 +41,35 @@ whiteSpace = Token.whiteSpace lexer
 symbol     = Token.symbol     lexer
 
 
-expr = chainl1 exprNonApp $ pure App
-
-exprNonApp = (buildExpressionParser opTable subexpr
-              <?> "expression")
+expr = buildExpressionParser opTable (chainl1 subexpr $ pure App)
+       <?> "expression"
   where
-    subexpr = parens expr
-              <|> ite <|> true <|> false <|> int <|> lambda <|> var
+    foo = chainl1 subexpr $ pure App
+    subexpr = choice [parens expr, ite, letIn, letRec,
+                      true, false, int, lambda, var]
               <?> "expression"
 
-opTable = [[notOp],
+opTable = [[fixOp, notOp],
            [andOp],
            [orOp],
+           [eqOp],
+           [ltOp, gtOp, lteOp, gteOp],
            [timesOp, divOp],
            [plusOp, minusOp]]
   where
-    notOp   = Prefix $ reservedOp "not" >> pure Not
+    eqOp    = Infix  ( reservedOp "="   >> pure Eq    ) AssocNone
+    ltOp    = Infix  ( reservedOp "<"   >> pure Lt    ) AssocNone
+    gtOp    = Infix  ( reservedOp ">"   >> pure Gt    ) AssocNone
+    lteOp   = Infix  ( reservedOp "<="  >> pure Lte   ) AssocNone
+    gteOp   = Infix  ( reservedOp ">="  >> pure Gte   ) AssocNone
     andOp   = Infix  ( reservedOp "and" >> pure And   ) AssocLeft
     orOp    = Infix  ( reservedOp "or"  >> pure Or    ) AssocLeft
     plusOp  = Infix  ( reservedOp "+"   >> pure Plus  ) AssocLeft
     minusOp = Infix  ( reservedOp "-"   >> pure Minus ) AssocLeft
     timesOp = Infix  ( reservedOp "*"   >> pure Times ) AssocLeft
     divOp   = Infix  ( reservedOp "/"   >> pure Div   ) AssocLeft
+    notOp   = Prefix $ reservedOp "not" >> pure Not
+    fixOp   = Prefix $ reservedOp "fix" >> pure Fix
 
 true  = reserved "True"  >> pure (Norm $ B True)
 false = reserved "False" >> pure (Norm $ B False)
@@ -93,6 +101,33 @@ ite = do
   reserved "else"
   expE <- expr
   pure $ Ite cond expT expE
+
+-- Should let/in get its own constructor in the AST? This would allow us to
+-- print back the exact syntax. Maybe a fullAst + coreAst.
+letIn = do
+  reserved "let"
+  name <- name
+  colon
+  typ  <- typ
+  symbol "="
+  bind <- expr
+  reserved "in"
+  body <- expr
+  pure $ App (Norm $ Lambda emptyEnv name typ body) bind
+
+-- This demonstrates the utility in having AST constructors. Parsing has to do
+-- much, and it has to unravel several steps of "derived form" logic
+letRec = do
+  reserved "letrec"
+  name <- name
+  colon
+  typ  <- typ
+  symbol "="
+  bind <- expr
+  reserved "in"
+  body <- expr
+  pure $ App (Norm $ Lambda emptyEnv name typ body)
+       (Fix $ Norm $ Lambda emptyEnv name typ bind)
 
 
 typ = buildExpressionParser tOpTable subTypExpr <?> "type"
