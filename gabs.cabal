@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c8ec97e517eaf222bcf3ee0e6076e0cde4bea6f9f42348dd94f1c14048419c5d
+-- hash: 426645f7eab3260143121cbf570808e54599cca3b38fb9b6e37c46ddcd571a91
 
 name:           gabs
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
       GabsEval
       GabsParse
       GabsType
+      Unification
   other-modules:
       Paths_gabs
   hs-source-dirs:
