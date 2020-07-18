@@ -16,10 +16,10 @@ eval :: Env -> Expr -> Maybe NormalExpr
 eval env expr = case expr of
   Norm (B b) -> pure $ B b
   Norm (I i) -> pure $ I i
-  Norm (Lambda _ n t b) -> pure $ Lambda env n t b
+  Norm (Lambda _ n b) -> pure $ Lambda env n b
   Var n -> Map.lookup n env >>= eval env
   Fix e -> do
-    lam@(Lambda envLam n t body) <- eval env e
+    lam@(Lambda envLam n body) <- eval env e
     eval (Map.insert n (Fix $ Norm lam) envLam) body
   Eq e1 e2 -> do
     e1' <- eval env e1
@@ -72,7 +72,7 @@ eval env expr = case expr of
     B b <- eval env e1
     eval env $ if b then e2 else e3
   App e1 e2 -> do
-    Lambda envLam n _ body <- eval env e1
+    Lambda envLam n body <- eval env e1
     e2' <- eval env e2 -- CBV
     let extEnv = Map.insert n (Norm e2') envLam
     eval extEnv body
@@ -82,7 +82,7 @@ printResult :: NormalExpr -> IO ()
 printResult nExpr = do
   putStrLn $ show nExpr
   case nExpr of
-    Lambda env _ _ _ -> putStrLn $ "Environment: " ++ show env
+    Lambda env _ _ -> putStrLn $ "Environment: " ++ show env
     _ -> nop
   where
     nop = pure ()

@@ -2,6 +2,7 @@ module Unification where
 
 import Gabs.Ast
 
+import Data.Char
 import Data.Maybe
 
 import Data.Tuple.Extra
@@ -17,7 +18,37 @@ data UnifType =
   | UTInt
   | UTArr UnifType UnifType
   | UTHook Integer
-  deriving (Eq, Show)
+  deriving Eq
+
+instance Show UnifType where
+  show UTBool = "Bool"
+  show UTInt  = "Int"
+  show (UTHook i) = reverse $ intToName i
+  show (UTArr t1@(UTArr _ _) t2) = parens (show t1) ++ " -> " ++ show t2
+    where parens s = "(" ++ s ++ ")"
+  show (UTArr t1 t2) = show t1 ++ " -> " ++ show t2
+
+intToName = reverse . go
+  where
+    go i =
+      if i < 26 then
+        [chr $ fromIntegral $ 97 + i]
+      else
+        let (d, m) = i `divMod` 26 in
+        (chr $ fromIntegral $ 97 + m) : go (d - 1)
+
+normalizeUT = fst3 . norm 0 Map.empty
+  where
+    norm i m UTBool = (UTBool, m, i)
+    norm i m UTInt  = (UTInt,  m, i)
+    norm i m (UTArr t1 t2) =
+      let (t1', m1, j) = norm i m  t1 in
+      let (t2', m2, k) = norm j m1 t2 in
+      (UTArr t1' t2', m2, k)
+    norm i m (UTHook j) = case Map.lookup j m of
+      Just n  -> (UTHook n, m, i)
+      Nothing -> (UTHook i, Map.insert j i m, i+1)
+
 
 type UnifContext = Map.Map Name UnifType
 emptyCont :: UnifContext
@@ -92,7 +123,7 @@ inferType = fmap fst3 . go 0 emptyCont
     go i cont exp = case exp of
       Norm (B _) -> pure (UTBool, emptySol, i)
       Norm (I _) -> pure (UTInt,  emptySol, i)
-      Norm (Lambda _ n _ body) -> do
+      Norm (Lambda _ n body) -> do
         let extConv = Map.insert n (UTHook i) cont
         (range, sol, j) <- go (i+1) extConv body
         let domain = expandUT sol (UTHook i)
@@ -101,11 +132,9 @@ inferType = fmap fst3 . go 0 emptyCont
         uType <- Map.lookup n cont
         pure (uType, emptySol, i)
       Fix e -> do
-        (UTArr t1 t2, sol, j) <- go i cont e
-        if t1 == t2 then
-          pure (t1, sol, j)
-        else
-          Nothing
+        (UTArr t1 t2, sol1, j) <- go i cont e
+        sol <- solveWith [sol1] [(t1, t2)]
+        pure (expandUT sol t1, sol, j)
       Eq e1 e2 -> do
         (t1, sol1, j) <- go i cont e1
         (t2, sol2, k) <- go j cont e2

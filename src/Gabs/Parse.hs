@@ -24,6 +24,7 @@ languageDef = emptyDef {
   Token.identStart    = letter   <|> char '_',
   Token.identLetter   = alphaNum <|> char '_',
   Token.reservedNames = ["if", "then", "else", "λ", "+", "-", "~", "*", "/",
+                         "<", ">", "<=", ">=", "=",
                          "and", "or", "not", "Bool", "Int", "->", "lambda",
                          "fix", "let", "in", "letrec"]
 }
@@ -85,11 +86,9 @@ name = identifier
 lambda = do
   void (symbol "λ") <|> reserved "lambda"
   name <- name
-  colon
-  typ  <- typ
   dot
   expr <- expr
-  pure $ Norm $ Lambda emptyEnv name typ expr
+  pure $ Norm $ Lambda emptyEnv name expr
 
 var = Var <$> name
 
@@ -107,27 +106,23 @@ ite = do
 letIn = do
   reserved "let"
   name <- name
-  colon
-  typ  <- typ
   symbol "="
   bind <- expr
   reserved "in"
   body <- expr
-  pure $ App (Norm $ Lambda emptyEnv name typ body) bind
+  pure $ App (Norm $ Lambda emptyEnv name body) bind
 
 -- This demonstrates the utility in having AST constructors. Parsing has to do
 -- much, and it has to unravel several steps of "derived form" logic
 letRec = do
   reserved "letrec"
   name <- name
-  colon
-  typ  <- typ
   symbol "="
   bind <- expr
   reserved "in"
   body <- expr
-  pure $ App (Norm $ Lambda emptyEnv name typ body)
-       (Fix $ Norm $ Lambda emptyEnv name typ bind)
+  pure $ App (Norm $ Lambda emptyEnv name body)
+       (Fix $ Norm $ Lambda emptyEnv name bind)
 
 
 typ = buildExpressionParser tOpTable subTypExpr <?> "type"
@@ -147,31 +142,31 @@ gabs = do
   whiteSpace >> eof
   pure expr
 
-interpWithName :: String -> String -> Either String NormalExpr
-interpWithName fileName src = do
-  expr <- mapLeft show $ parse gabs fileName src
-  maybeToEither "Type error" $ typeExp emptyContext expr
-  maybeToEither "Runtime error (shouldn't happen!)" $ eval emptyEnv expr
-  where
-    mapLeft _ (Right x) = Right x
-    mapLeft f (Left  x) = Left $ f x
-    maybeToEither x Nothing  = Left x
-    maybeToEither _ (Just x) = Right x
-
-interpFile :: String -> IO (Either String NormalExpr)
-interpFile file = do
-  src <- readFile file
-  pure $ interpWithName file src
-
-interpFileTest file = do
-  eithExpr <- interpFile file
-  case eithExpr of
-    Left  err -> putStrLn $ "Error: " ++ err
-    Right res -> printResult res
-
-interp :: String -> Either String NormalExpr
-interp = interpWithName ""
-
-interpTest str = case interp str of
-  Left  err -> putStrLn $ "Error: " ++ err
-  Right res -> printResult res
+-- interpWithName :: String -> String -> Either String NormalExpr
+-- interpWithName fileName src = do
+--   expr <- mapLeft show $ parse gabs fileName src
+--   maybeToEither "Type error" $ typeExp emptyContext expr
+--   maybeToEither "Runtime error (shouldn't happen!)" $ eval emptyEnv expr
+--   where
+--     mapLeft _ (Right x) = Right x
+--     mapLeft f (Left  x) = Left $ f x
+--     maybeToEither x Nothing  = Left x
+--     maybeToEither _ (Just x) = Right x
+--
+-- interpFile :: String -> IO (Either String NormalExpr)
+-- interpFile file = do
+--   src <- readFile file
+--   pure $ interpWithName file src
+--
+-- interpFileTest file = do
+--   eithExpr <- interpFile file
+--   case eithExpr of
+--     Left  err -> putStrLn $ "Error: " ++ err
+--     Right res -> printResult res
+--
+-- interp :: String -> Either String NormalExpr
+-- interp = interpWithName ""
+--
+-- interpTest str = case interp str of
+--   Left  err -> putStrLn $ "Error: " ++ err
+--   Right res -> printResult res

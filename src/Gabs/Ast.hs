@@ -10,14 +10,14 @@ emptyEnv = Map.empty :: Env
 data NormalExpr =
     B Bool
   | I Integer
-  | Lambda Env Name Type Expr
+  | Lambda Env Name Expr
   deriving Eq
 
 instance Show NormalExpr where
   show exp = case exp of
     B b -> show b
     I i -> show i
-    Lambda _ n t e -> "λ" ++ n ++ ": " ++ show t ++ ". " ++ show e
+    Lambda _ n e -> "λ" ++ n ++ ". " ++ show e
 
 data Expr =
     Norm NormalExpr

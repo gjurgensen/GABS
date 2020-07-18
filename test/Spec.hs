@@ -26,13 +26,13 @@ letTest_value = B False
 
 fact = "fix λfact: Int -> Int. λx: Int. if x > 1 then x * fact (x-1) else 1"
 
-fixTest = "  let fact: Int -> Int = fix λfact: Int -> Int.    \
-          \      λx: Int. if x > 1 then x * fact (x-1) else 1 \
-          \  in fact 4"
+fixTest = "let fact: Int -> Int = fix λfact: Int -> Int.    \
+        \      λx: Int. if x > 1 then x * fact (x-1) else 1 \
+        \  in fact 4"
 
-letrecTest = "  letrec fact: Int -> Int = λx: Int.      \
-             \      if x > 1 then x * fact (x-1) else 1 \
-             \  in fact 4"
+letrecTest = "letrec fact: Int -> Int = λx: Int.      \
+           \      if x > 1 then x * fact (x-1) else 1 \
+           \  in fact 4"
 
 -- Unification test cases
 
@@ -44,6 +44,8 @@ badCycle = [(UTHook 0, UTArr (UTHook 1) (UTHook 0))]
 smallConstr :: [Constraint]
 smallConstr = [(UTHook 0, UTArr (UTHook 1) (UTHook 2))
               ,(UTHook 2, UTArr (UTHook 1) (UTHook 3))]
+
+apply = "fix λapply. λf. λv. λt. if t = 0 then v else apply f (f v) (t-1)"
 
 main :: IO ()
 main = putStrLn "Todo"
