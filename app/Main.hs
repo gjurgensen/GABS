@@ -1,6 +1,6 @@
 module Main where
 
-import GabsParse
+import Gabs.Parse
 
 import Control.Monad
 import Control.Monad.Extra

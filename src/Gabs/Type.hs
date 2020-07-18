@@ -1,6 +1,6 @@
-module GabsType where
+module Gabs.Type where
 
-import GabsAst
+import Gabs.Ast
 
 import qualified Data.Map.Strict as Map
 

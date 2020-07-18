@@ -2,11 +2,11 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module GabsParse where
+module Gabs.Parse where
 
-import GabsAst
-import GabsType
-import GabsEval
+import Gabs.Ast
+import Gabs.Type
+import Gabs.Eval
 
 import Data.Char
 import Data.Maybe

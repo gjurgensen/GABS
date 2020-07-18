@@ -1,6 +1,6 @@
-module GabsEval where
+module Gabs.Eval where
 
-import GabsAst
+import Gabs.Ast
 
 import Control.Monad
 import qualified Data.Map.Strict as Map

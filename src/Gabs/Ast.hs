@@ -1,4 +1,4 @@
-module GabsAst where
+module Gabs.Ast where
 
 import qualified Data.Map.Strict as Map
 

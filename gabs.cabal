@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 426645f7eab3260143121cbf570808e54599cca3b38fb9b6e37c46ddcd571a91
+-- hash: 38453827c024ccfc919d6d59c0c381d7036cd1cdce5ead17175003162811b6a0
 
 name:           gabs
 version:        0.1.0.0
@@ -27,10 +27,10 @@ source-repository head
 
 library
   exposed-modules:
-      GabsAst
-      GabsEval
-      GabsParse
-      GabsType
+      Gabs.Ast
+      Gabs.Eval
+      Gabs.Parse
+      Gabs.Type
       Unification
   other-modules:
       Paths_gabs

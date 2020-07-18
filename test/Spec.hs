@@ -1,8 +1,11 @@
 module Main where
 
-import GabsAst
-import GabsEval
-import GabsParse
+import Gabs.Ast
+import Gabs.Eval
+import Gabs.Parse
+import Unification
+
+-- GABS test cases
 
 iArith = "1 + 7 * 3 - 2"
 iArith_value = I 20
@@ -21,7 +24,8 @@ lambdatest_value = B True
 letTest = "let foo: Bool = True in not foo"
 letTest_value = B False
 
--- Note, the parenthesis around the lambda are unnecessary. They are only for readability
+fact = "fix λfact: Int -> Int. λx: Int. if x > 1 then x * fact (x-1) else 1"
+
 fixTest = "  let fact: Int -> Int = fix λfact: Int -> Int.    \
           \      λx: Int. if x > 1 then x * fact (x-1) else 1 \
           \  in fact 4"
@@ -29,6 +33,17 @@ fixTest = "  let fact: Int -> Int = fix λfact: Int -> Int.    \
 letrecTest = "  letrec fact: Int -> Int = λx: Int.      \
              \      if x > 1 then x * fact (x-1) else 1 \
              \  in fact 4"
+
+-- Unification test cases
+
+-- represents constraint {a = b -> a}
+badCycle :: [Constraint]
+badCycle = [(UTHook 0, UTArr (UTHook 1) (UTHook 0))]
+
+-- represents {a = b -> c, c = b -> d}
+smallConstr :: [Constraint]
+smallConstr = [(UTHook 0, UTArr (UTHook 1) (UTHook 2))
+              ,(UTHook 2, UTArr (UTHook 1) (UTHook 3))]
 
 main :: IO ()
 main = putStrLn "Todo"
