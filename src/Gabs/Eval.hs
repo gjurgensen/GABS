@@ -77,12 +77,32 @@ eval env expr = case expr of
     let extEnv = Map.insert n (Norm e2') envLam
     eval extEnv body
 
--- Prints a lambda's environment.
-printResult :: NormalExpr -> IO ()
-printResult nExpr = do
-  putStrLn $ show nExpr
-  case nExpr of
-    Lambda env _ _ -> putStrLn $ "Environment: " ++ show env
-    _ -> nop
-  where
-    nop = pure ()
+desugarNormal :: SugarNormalExpr -> NormalExpr
+desugarNormal s = case s of
+  SB b -> B b
+  SI i -> I i
+  SLambda env name s -> Lambda env name $ desugarExpr s
+
+desugarExpr :: SugarExpr -> Expr
+desugarExpr s = case s of
+  SNorm s -> Norm $ desugarNormal s
+  SVar v -> Var v
+  SFix s -> Fix $ desugarExpr s
+  SIte s1 s2 s3 -> Ite (desugarExpr s1) (desugarExpr s2) (desugarExpr s3)
+  SEq s1 s2 -> Eq (desugarExpr s1) (desugarExpr s2)
+  SLt s1 s2 -> Lt (desugarExpr s1) (desugarExpr s2)
+  SGt s1 s2 -> Gt (desugarExpr s1) (desugarExpr s2)
+  SLte s1 s2 -> Lte (desugarExpr s1) (desugarExpr s2)
+  SGte s1 s2 -> Gte (desugarExpr s1) (desugarExpr s2)
+  SApp s1 s2 -> App (desugarExpr s1) (desugarExpr s2)
+  SAnd s1 s2 -> And (desugarExpr s1) (desugarExpr s2)
+  SOr s1 s2 -> Or (desugarExpr s1) (desugarExpr s2)
+  SNot s -> Not $ desugarExpr s
+  SPlus s1 s2 -> Plus (desugarExpr s1) (desugarExpr s2)
+  SMinus s1 s2 -> Minus (desugarExpr s1) (desugarExpr s2)
+  STimes s1 s2 -> Times (desugarExpr s1) (desugarExpr s2)
+  SDiv s1 s2 -> Div (desugarExpr s1) (desugarExpr s2)
+  LetIn n s1 s2 -> App (Norm $ Lambda emptyEnv n $ desugarExpr s2) $ desugarExpr s1
+  LetRec n s1 s2 -> desugarExpr $ LetIn n (SFix $ SNorm $ SLambda emptyEnv n s1) s2
+
+evalSugar env = eval env . desugarExpr

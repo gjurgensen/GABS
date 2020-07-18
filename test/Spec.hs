@@ -26,11 +26,11 @@ letTest_value = B False
 
 fact = "fix λfact: Int -> Int. λx: Int. if x > 1 then x * fact (x-1) else 1"
 
-fixTest = "let fact: Int -> Int = fix λfact: Int -> Int.    \
-        \      λx: Int. if x > 1 then x * fact (x-1) else 1 \
+fixTest = "let fact = fix λfact.    \
+        \      λx. if x > 1 then x * fact (x-1) else 1 \
         \  in fact 4"
 
-letrecTest = "letrec fact: Int -> Int = λx: Int.      \
+letrecTest = "letrec fact = λx.      \
            \      if x > 1 then x * fact (x-1) else 1 \
            \  in fact 4"
 

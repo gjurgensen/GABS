@@ -5,22 +5,24 @@ import qualified Data.Map.Strict as Map
 type Name = String
 
 type Env = Map.Map Name Expr
-emptyEnv = Map.empty :: Env
+emptyEnv :: Env
+emptyEnv = Map.empty
 
-data NormalExpr =
-    B Bool
+data NormalExpr
+  = B Bool
   | I Integer
   | Lambda Env Name Expr
   deriving Eq
 
+-- TODO: print environment with lambdas
 instance Show NormalExpr where
   show exp = case exp of
     B b -> show b
     I i -> show i
     Lambda _ n e -> "λ" ++ n ++ ". " ++ show e
 
-data Expr =
-    Norm NormalExpr
+data Expr
+  = Norm NormalExpr
   | Var Name
   | Fix Expr
   | Ite Expr Expr Expr
@@ -39,6 +41,8 @@ data Expr =
   | Div Expr Expr
   deriving Eq
 
+-- Over eager with the parentheses.
+-- TODO: use precedence to intelligently parenthesize
 instance Show Expr where
   show expr = case expr of
     Norm n -> show n
@@ -61,8 +65,37 @@ instance Show Expr where
     where
       parens s = "(" ++ s ++  ")"
 
-data Type =
-    TBool
+data SugarNormalExpr
+  = SB Bool
+  | SI Integer
+  | SLambda Env Name SugarExpr
+  deriving Eq
+
+data SugarExpr
+  = SNorm SugarNormalExpr
+  | SVar Name
+  | SFix SugarExpr
+  | SIte SugarExpr SugarExpr SugarExpr
+  | SEq SugarExpr SugarExpr
+  | SLt SugarExpr SugarExpr
+  | SGt SugarExpr SugarExpr
+  | SLte SugarExpr SugarExpr
+  | SGte SugarExpr SugarExpr
+  | SApp SugarExpr SugarExpr
+  | SAnd SugarExpr SugarExpr
+  | SOr SugarExpr SugarExpr
+  | SNot SugarExpr
+  | SPlus SugarExpr SugarExpr
+  | SMinus SugarExpr SugarExpr
+  | STimes SugarExpr SugarExpr
+  | SDiv SugarExpr SugarExpr
+  -- New exprs
+  | LetIn Name SugarExpr SugarExpr
+  | LetRec Name SugarExpr SugarExpr
+  deriving Eq
+
+data Type
+  = TBool
   | TInt
   | TArr Type Type
   deriving Eq

@@ -108,9 +108,9 @@ solve = solveFold $ Just emptySol
           _ -> Nothing
 
 solToConstraints :: ConstrSolution -> [Constraint]
-solToConstraints sol = mapOverFst UTHook <$> Map.toList sol
+solToConstraints sol = mapFst UTHook <$> Map.toList sol
   where
-    mapOverFst f (x, y) = (f x, y)
+    mapFst f (x, y) = (f x, y)
 
 solveWith :: [ConstrSolution] -> [Constraint] -> Maybe ConstrSolution
 solveWith sols constrs = solve $ concat $ constrs : (solToConstraints <$> sols)
@@ -203,7 +203,7 @@ inferType = fmap fst3 . go 0 emptyCont
       App e1 e2 -> do
         (t1, sol1, j) <- go i cont e1
         (t2, sol2, k) <- go j cont e2
-        let domain = UTHook $ k + 1
-        let range  = UTHook $ k + 2
+        let domain = UTHook $ k
+        let range  = UTHook $ k + 1
         sol <- solveWith [sol1, sol2] [(t1, UTArr domain range), (t2, domain)]
         pure (expandUT sol range, sol, k + 2)

@@ -46,11 +46,17 @@ repl = do
           (Left  err) -> "Error: " ++ err
         repl
   where
+    commands = "\"t <expr>\" to type an epression; \"q\" to quit; \"help\" to print commands"
     command "q" = pure ()
+    command ('t':e) = do
+      outputStrLn $ case interpType e of
+        Left  err -> "Error: " ++ err
+        Right res -> show res
+      repl
     command "help" = do
-      outputStrLn "Commands: \"q\" to quit; \"help\" to print commands"
+      outputStrLn $ "Commands: " ++ commands
       repl
     command c = do
       outputStrLn $ "Unrecognised command: " ++ c
-      outputStrLn "Valid commands: \"q\" to quit; \"help\" to print commands"
+      outputStrLn $ "Valid commands: " ++ commands
       repl

@@ -5,9 +5,11 @@
 module Gabs.Parse where
 
 import Gabs.Ast
-import Gabs.Type
+-- import Gabs.Type
+import Unification
 import Gabs.Eval
 
+import Data.Bifunctor
 import Data.Char
 import Data.Maybe
 import Control.Monad
@@ -42,10 +44,10 @@ whiteSpace = Token.whiteSpace lexer
 symbol     = Token.symbol     lexer
 
 
-expr = buildExpressionParser opTable (chainl1 subexpr $ pure App)
+expr = buildExpressionParser opTable (chainl1 subexpr $ pure SApp)
        <?> "expression"
   where
-    foo = chainl1 subexpr $ pure App
+    foo = chainl1 subexpr $ pure SApp
     subexpr = choice [parens expr, ite, letIn, letRec,
                       true, false, int, lambda, var]
               <?> "expression"
@@ -58,39 +60,39 @@ opTable = [[fixOp, notOp],
            [timesOp, divOp],
            [plusOp, minusOp]]
   where
-    eqOp    = Infix  ( reservedOp "="   >> pure Eq    ) AssocNone
-    ltOp    = Infix  ( reservedOp "<"   >> pure Lt    ) AssocNone
-    gtOp    = Infix  ( reservedOp ">"   >> pure Gt    ) AssocNone
-    lteOp   = Infix  ( reservedOp "<="  >> pure Lte   ) AssocNone
-    gteOp   = Infix  ( reservedOp ">="  >> pure Gte   ) AssocNone
-    andOp   = Infix  ( reservedOp "and" >> pure And   ) AssocLeft
-    orOp    = Infix  ( reservedOp "or"  >> pure Or    ) AssocLeft
-    plusOp  = Infix  ( reservedOp "+"   >> pure Plus  ) AssocLeft
-    minusOp = Infix  ( reservedOp "-"   >> pure Minus ) AssocLeft
-    timesOp = Infix  ( reservedOp "*"   >> pure Times ) AssocLeft
-    divOp   = Infix  ( reservedOp "/"   >> pure Div   ) AssocLeft
-    notOp   = Prefix $ reservedOp "not" >> pure Not
-    fixOp   = Prefix $ reservedOp "fix" >> pure Fix
+    eqOp    = Infix  ( reservedOp "="   >> pure SEq    ) AssocNone
+    ltOp    = Infix  ( reservedOp "<"   >> pure SLt    ) AssocNone
+    gtOp    = Infix  ( reservedOp ">"   >> pure SGt    ) AssocNone
+    lteOp   = Infix  ( reservedOp "<="  >> pure SLte   ) AssocNone
+    gteOp   = Infix  ( reservedOp ">="  >> pure SGte   ) AssocNone
+    andOp   = Infix  ( reservedOp "and" >> pure SAnd   ) AssocLeft
+    orOp    = Infix  ( reservedOp "or"  >> pure SOr    ) AssocLeft
+    plusOp  = Infix  ( reservedOp "+"   >> pure SPlus  ) AssocLeft
+    minusOp = Infix  ( reservedOp "-"   >> pure SMinus ) AssocLeft
+    timesOp = Infix  ( reservedOp "*"   >> pure STimes ) AssocLeft
+    divOp   = Infix  ( reservedOp "/"   >> pure SDiv   ) AssocLeft
+    notOp   = Prefix $ reservedOp "not" >> pure SNot
+    fixOp   = Prefix $ reservedOp "fix" >> pure SFix
 
-true  = reserved "True"  >> pure (Norm $ B True)
-false = reserved "False" >> pure (Norm $ B False)
+true  = reserved "True"  >> pure (SNorm $ SB True)
+false = reserved "False" >> pure (SNorm $ SB False)
 
--- int = I <$> integer
 int = do
   isNeg <- fmap isJust $ optionMaybe $ symbol "~"
   num   <- natural
-  pure $ Norm $ I $ if isNeg then negate num else num
+  pure $ SNorm $ SI $ if isNeg then negate num else num
 
 name = identifier
 
+-- TODO: multiple arg syntax
 lambda = do
   void (symbol "λ") <|> reserved "lambda"
   name <- name
   dot
   expr <- expr
-  pure $ Norm $ Lambda emptyEnv name expr
+  pure $ SNorm $ SLambda emptyEnv name expr
 
-var = Var <$> name
+var = SVar <$> name
 
 ite = do
   reserved "if"
@@ -99,10 +101,8 @@ ite = do
   expT <- expr
   reserved "else"
   expE <- expr
-  pure $ Ite cond expT expE
+  pure $ SIte cond expT expE
 
--- Should let/in get its own constructor in the AST? This would allow us to
--- print back the exact syntax. Maybe a fullAst + coreAst.
 letIn = do
   reserved "let"
   name <- name
@@ -110,10 +110,8 @@ letIn = do
   bind <- expr
   reserved "in"
   body <- expr
-  pure $ App (Norm $ Lambda emptyEnv name body) bind
+  pure $ LetIn name bind body
 
--- This demonstrates the utility in having AST constructors. Parsing has to do
--- much, and it has to unravel several steps of "derived form" logic
 letRec = do
   reserved "letrec"
   name <- name
@@ -121,8 +119,7 @@ letRec = do
   bind <- expr
   reserved "in"
   body <- expr
-  pure $ App (Norm $ Lambda emptyEnv name body)
-       (Fix $ Norm $ Lambda emptyEnv name bind)
+  pure $ LetRec name bind body
 
 
 typ = buildExpressionParser tOpTable subTypExpr <?> "type"
@@ -142,31 +139,38 @@ gabs = do
   whiteSpace >> eof
   pure expr
 
--- interpWithName :: String -> String -> Either String NormalExpr
--- interpWithName fileName src = do
---   expr <- mapLeft show $ parse gabs fileName src
---   maybeToEither "Type error" $ typeExp emptyContext expr
---   maybeToEither "Runtime error (shouldn't happen!)" $ eval emptyEnv expr
---   where
---     mapLeft _ (Right x) = Right x
---     mapLeft f (Left  x) = Left $ f x
---     maybeToEither x Nothing  = Left x
---     maybeToEither _ (Just x) = Right x
---
--- interpFile :: String -> IO (Either String NormalExpr)
--- interpFile file = do
---   src <- readFile file
---   pure $ interpWithName file src
---
--- interpFileTest file = do
---   eithExpr <- interpFile file
---   case eithExpr of
---     Left  err -> putStrLn $ "Error: " ++ err
---     Right res -> printResult res
---
--- interp :: String -> Either String NormalExpr
--- interp = interpWithName ""
---
--- interpTest str = case interp str of
---   Left  err -> putStrLn $ "Error: " ++ err
---   Right res -> printResult res
+
+interpWithName :: String -> String -> Either String NormalExpr
+interpWithName fileName src = do
+  expr <- bimap show desugarExpr $ parse gabs fileName src
+  maybeToEither "Type error" $ inferType expr
+  maybeToEither "Runtime error (shouldn't happen!)" $ eval emptyEnv expr
+  where
+    maybeToEither x Nothing  = Left  x
+    maybeToEither _ (Just x) = Right x
+
+interpFile :: String -> IO (Either String NormalExpr)
+interpFile file = do
+  src <- readFile file
+  pure $ interpWithName file src
+
+interpFileTest file = do
+  eithExpr <- interpFile file
+  putStrLn $ case eithExpr of
+    Left  err -> "Error: " ++ err
+    Right res -> show res
+
+interp :: String -> Either String NormalExpr
+interp = interpWithName ""
+
+interpTest str = putStrLn $ case interp str of
+  Left  err -> "Error: " ++ err
+  Right res -> show res
+
+interpType :: String -> Either String UnifType
+interpType s = do
+  expr <- bimap show desugarExpr $ parse gabs "" s
+  maybeToEither "Type error" $ normalizeUT <$> inferType expr
+  where
+    maybeToEither x Nothing  = Left  x
+    maybeToEither _ (Just x) = Right x
