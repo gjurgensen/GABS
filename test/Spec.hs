@@ -1,9 +1,9 @@
 module Main where
 
 import Gabs.Ast
-import Gabs.Eval
+-- import Gabs.Eval
 import Gabs.Parse
-import Unification
+import Gabs.Type
 
 -- GABS test cases
 
@@ -18,13 +18,13 @@ bArith_bad = "or and"
 iteTest = "if " ++ bArith ++ " then " ++ iArith ++ "else -2"
 iteTest_value = iArith_value
 
-lambdaTest = "(λx: Int -> Bool. λy: Int. x y) (λz: Int. True) 3"
+lambdaTest = "(λx. λy. x y) (λz. True) 3"
 lambdatest_value = B True
 
-letTest = "let foo: Bool = True in not foo"
+letTest = "let foo = True in not foo"
 letTest_value = B False
 
-fact = "fix λfact: Int -> Int. λx: Int. if x > 1 then x * fact (x-1) else 1"
+fact = "fix λfact. λx. if x > 1 then x * fact (x-1) else 1"
 
 fixTest = "let fact = fix λfact.    \
         \      λx. if x > 1 then x * fact (x-1) else 1 \

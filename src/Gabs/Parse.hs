@@ -5,8 +5,7 @@
 module Gabs.Parse where
 
 import Gabs.Ast
--- import Gabs.Type
-import Unification
+import Gabs.Type
 import Gabs.Eval
 
 import Data.Bifunctor
