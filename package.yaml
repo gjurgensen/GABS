@@ -25,6 +25,7 @@ dependencies:
 - parsec
 - containers
 - haskeline
+- transformers
 
 library:
   source-dirs: src
