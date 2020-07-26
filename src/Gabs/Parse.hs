@@ -83,13 +83,14 @@ int = do
 
 name = identifier
 
--- TODO: multiple arg syntax
+-- TODO: Add multi-arg function to sugared AST rather than parsing directly
+-- into nested lambdas
 lambda = do
   void (symbol "λ") <|> reserved "lambda"
-  name <- name
+  args <- many1 name
   dot
-  expr <- expr
-  pure $ SNorm $ SLambda emptyEnv name expr
+  body <- expr
+  pure $ foldr (\arg -> SNorm . SLambda emptyEnv arg) body args
 
 var = SVar <$> name
 
