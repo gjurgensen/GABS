@@ -24,7 +24,8 @@ instance Eq1 TypeF where
 instance Show1 TypeF where
   liftShowsPrec _ _ _ TBool = showString "Bool"
   liftShowsPrec _ _ _ TInt  = showString "Int"
-  liftShowsPrec fPrec _ i (TArr r1 r2) = showParen (i > 10)
+  --liftShowsPrec fPrec _ i (TArr r1 r2) = showParen (i > 10)
+  liftShowsPrec fPrec _ i (TArr r1 r2) = showParen True
     $ fPrec 11 r1
     . showString " -> "
     . fPrec 11 r2
@@ -48,7 +49,7 @@ inferType = evalUnif . go emptyCont
         range  <- go extCont body
         domain <- solve $ UVar var
         pure $ UBase $ TArr domain range
-      Var n -> 
+      Var n ->
         liftMaybeToUnif $ Map.lookup n cont 
       Fix e -> do 
         UBase (TArr domain range) <- go cont e

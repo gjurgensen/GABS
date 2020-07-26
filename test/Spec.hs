@@ -45,7 +45,7 @@ letrecTest = "letrec fact = λx.      \
 -- smallConstr = [(UTHook 0, UTArr (UTHook 1) (UTHook 2))
 --               ,(UTHook 2, UTArr (UTHook 1) (UTHook 3))]
 
-apply = "fix λapply. λf. λv. λt. if t = 0 then v else apply f (f v) (t-1)"
+apply = "fix λapply f v t. if t = 0 then v else apply f (f v) (t-1)"
 
 main :: IO ()
 main = putStrLn "Todo"

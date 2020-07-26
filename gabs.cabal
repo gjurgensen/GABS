@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 477a3bdd055ec19c18e59f15497c6c3d33915c8464abbeee269c1e9e251a140c
+-- hash: 8a8b3c6b7e9f0be669f5335139965e8466fa6f337355848ad88ca06ee8593d3b
 
 name:           gabs
 version:        0.1.0.0
@@ -42,7 +42,6 @@ library
     , extra
     , haskeline
     , parsec
-    , recursion-schemes
     , transformers
   default-language: Haskell2010
 
@@ -60,7 +59,6 @@ executable gabs-exe
     , gabs
     , haskeline
     , parsec
-    , recursion-schemes
     , transformers
   default-language: Haskell2010
 
@@ -80,6 +78,5 @@ test-suite gabs-test
     , gabs
     , haskeline
     , parsec
-    , recursion-schemes
     , transformers
   default-language: Haskell2010

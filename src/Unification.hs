@@ -5,6 +5,7 @@
 module Unification (
   UnifPattern(..),
   UnifierT, Unifier,
+  unsafePrintState,
   occursIn,
   getPrincipal,
   addConstraint, (===),
@@ -15,6 +16,8 @@ module Unification (
   evalUnifT, evalUnif,
   execUnifT, execUnif
   ) where
+
+import Debug.Trace
 
 import Data.Char
 import Data.Maybe
@@ -114,7 +117,6 @@ unifySolutions :: (Eq1 t, Functor t, Foldable t)
   => Solution t
   -> Solution t
   -> Maybe (Solution t)
---unifySolutions sol = foldr ((=<<) . unify) (Just sol) . solToConstrs
 unifySolutions sol = foldrM unify sol . solToConstrs
   where
     solToConstrs sol = mapFst UVar <$> Map.toList sol
@@ -125,6 +127,12 @@ liftMaybe = MaybeT . pure
 
 
 -- Exported definitions:
+unsafePrintState :: (Show1 t, Monad m) => String -> UnifierT t m ()
+unsafePrintState str = UnifierT $ do
+  var <- gets nextVar
+  sol <- gets solution
+  flip trace (pure ())
+    $ str <> "\n" <> show var <> "\n" <> show sol <> "\n"
 
 occursIn :: (Eq1 t, Foldable t) => UnifPattern t -> UnifPattern t -> Bool
 x `occursIn` y = x == y || case (x,y) of
@@ -142,9 +150,10 @@ addConstraint :: (Eq1 t, Functor t, Foldable t, Monad m)
   -> UnifierT t m ()
 addConstraint c = UnifierT $ do
   state <- get
-  void $ lift $ do
+  newState <- lift $ do
     newSol <- liftMaybe $ unify c $ solution state
     pure $ state {solution = newSol}
+  put newState
 
 (===) :: (Eq1 t, Functor t, Foldable t, Monad m)
   => UnifPattern t

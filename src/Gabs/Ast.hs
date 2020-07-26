@@ -94,13 +94,13 @@ data SugarExpr
   | LetRec Name SugarExpr SugarExpr
   deriving Eq
 
-data Type
-  = TBool
-  | TInt
-  | TArr Type Type
-  deriving Eq
+-- data Type
+--   = TBool
+--   | TInt
+--   | TArr Type Type
+--   deriving Eq
 
-instance Show Type where
-  show TBool = "Bool"
-  show TInt  = "Int"
-  show (TArr t1 t2) = show t1 ++ " -> " ++ show t2
+-- instance Show Type where
+--   show TBool = "Bool"
+--   show TInt  = "Int"
+--   show (TArr t1 t2) = show t1 ++ " -> " ++ show t2
