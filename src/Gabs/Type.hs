@@ -6,6 +6,8 @@ import Gabs.Ast
 import Unification
 
 import Data.Functor.Classes
+
+import Data.Tuple.Extra
 import qualified Data.Map.Strict as Map
 
 
@@ -31,6 +33,21 @@ instance Show1 TypeF where
     . fPrec 11 r2
 
 type Type = UnifPattern TypeF
+
+-- Unfortunately, this can't be written generically, except by Template Haskell.
+normalizeType :: Type -> Type
+normalizeType = fst3 . norm 0 Map.empty
+  where
+    norm i m (UBase TBool) = (UBase TBool, m, i)
+    norm i m (UBase TInt)  = (UBase TInt,  m, i)
+    norm i m (UBase (TArr t1 t2)) =
+      let (t1', m1, j) = norm i m  t1 in
+      let (t2', m2, k) = norm j m1 t2 in
+      (UBase $ TArr t1' t2', m2, k)
+    norm i m (UVar j) = case Map.lookup j m of
+      Just n  -> (UVar n, m, i)
+      Nothing -> (UVar i, Map.insert j i m, i+1)
+
 
 type Context = Map.Map Name Type
 emptyCont :: Context

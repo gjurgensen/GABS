@@ -170,8 +170,7 @@ interpTest str = putStrLn $ case interp str of
 interpType :: String -> Either String Type
 interpType s = do
   expr <- bimap show desugarExpr $ parse gabs "" s
-  maybeToEither "Type error" $ inferType expr
---  maybeToEither "Type error" $ normalizeUT <$> inferType expr
+  maybeToEither "Type error" $ normalizeType <$> inferType expr
   where
     maybeToEither x Nothing  = Left  x
     maybeToEither _ (Just x) = Right x
