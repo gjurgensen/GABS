@@ -37,13 +37,13 @@ letrecTest = "letrec fact = λx.      \
 -- Unification test cases
 
 -- represents constraint {a = b -> a}
-badCycle :: [Constraint]
-badCycle = [(UTHook 0, UTArr (UTHook 1) (UTHook 0))]
+-- badCycle :: [Constraint]
+-- badCycle = [(UTHook 0, UTArr (UTHook 1) (UTHook 0))]
 
--- represents {a = b -> c, c = b -> d}
-smallConstr :: [Constraint]
-smallConstr = [(UTHook 0, UTArr (UTHook 1) (UTHook 2))
-              ,(UTHook 2, UTArr (UTHook 1) (UTHook 3))]
+-- -- represents {a = b -> c, c = b -> d}
+-- smallConstr :: [Constraint]
+-- smallConstr = [(UTHook 0, UTArr (UTHook 1) (UTHook 2))
+--               ,(UTHook 2, UTArr (UTHook 1) (UTHook 3))]
 
 apply = "fix λapply. λf. λv. λt. if t = 0 then v else apply f (f v) (t-1)"
 

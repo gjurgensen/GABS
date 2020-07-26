@@ -26,6 +26,7 @@ dependencies:
 - containers
 - haskeline
 - transformers
+- recursion-schemes
 
 library:
   source-dirs: src

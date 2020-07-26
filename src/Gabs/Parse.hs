@@ -121,16 +121,16 @@ letRec = do
   pure $ LetRec name bind body
 
 
-typ = buildExpressionParser tOpTable subTypExpr <?> "type"
-  where
-    subTypExpr = parens typ <|> tBool <|> tInt <?> "type"
+-- typ = buildExpressionParser tOpTable subTypExpr <?> "type"
+--   where
+--     subTypExpr = parens typ <|> tBool <|> tInt <?> "type"
 
-tOpTable = [[arr]]
-  where
-    arr = Infix (reservedOp "->" >> pure TArr) AssocRight
+-- tOpTable = [[arr]]
+--   where
+--     arr = Infix (reservedOp "->" >> pure TArr) AssocRight
 
-tBool = reserved "Bool" >> pure TBool
-tInt  = reserved "Int"  >> pure TInt
+-- tBool = reserved "Bool" >> pure TBool
+-- tInt  = reserved "Int"  >> pure TInt
 
 gabs = do
   whiteSpace
@@ -166,10 +166,11 @@ interpTest str = putStrLn $ case interp str of
   Left  err -> "Error: " ++ err
   Right res -> show res
 
-interpType :: String -> Either String UnifType
+interpType :: String -> Either String Type
 interpType s = do
   expr <- bimap show desugarExpr $ parse gabs "" s
-  maybeToEither "Type error" $ normalizeUT <$> inferType expr
+  maybeToEither "Type error" $ inferType expr
+--  maybeToEither "Type error" $ normalizeUT <$> inferType expr
   where
     maybeToEither x Nothing  = Left  x
     maybeToEither _ (Just x) = Right x

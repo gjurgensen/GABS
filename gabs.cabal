@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 98b952fdc1f632a0e5e1bdeb8b0034c2aab81948c4ac184593759c2cd21d630b
+-- hash: 477a3bdd055ec19c18e59f15497c6c3d33915c8464abbeee269c1e9e251a140c
 
 name:           gabs
 version:        0.1.0.0
@@ -42,6 +42,7 @@ library
     , extra
     , haskeline
     , parsec
+    , recursion-schemes
     , transformers
   default-language: Haskell2010
 
@@ -59,6 +60,7 @@ executable gabs-exe
     , gabs
     , haskeline
     , parsec
+    , recursion-schemes
     , transformers
   default-language: Haskell2010
 
@@ -66,6 +68,7 @@ test-suite gabs-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      UnifTest
       Paths_gabs
   hs-source-dirs:
       test
@@ -77,5 +80,6 @@ test-suite gabs-test
     , gabs
     , haskeline
     , parsec
+    , recursion-schemes
     , transformers
   default-language: Haskell2010
